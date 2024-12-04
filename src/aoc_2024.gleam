@@ -1,5 +1,9 @@
-import gleam/io
+import argv
+import solution01
 
 pub fn main() {
-  io.println("Hello from aoc_2024!")
+  case argv.load().arguments {
+    ["01"] -> solution01.run()
+    _ -> panic
+  }
 }
