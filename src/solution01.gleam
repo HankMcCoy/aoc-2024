@@ -7,6 +7,7 @@ import gleam/regexp
 import gleam/result.{unwrap}
 import gleam/string
 import simplifile
+import util.{parse_number_lists}
 
 fn count_instances(data: List(a)) -> dict.Dict(a, Int) {
   list.fold(data, dict.new(), fn(counts, num) {
@@ -20,6 +21,15 @@ fn count_instances(data: List(a)) -> dict.Dict(a, Int) {
 }
 
 pub fn parse_data(data: String) -> #(List(Int), List(Int)) {
+  parse_number_lists(data)
+  |> list.map(fn(list_of_nums) {
+    let assert [num1, num2] = list_of_nums
+    #(num1, num2)
+  })
+  |> list.unzip
+}
+
+pub fn parse_data_old(data: String) -> #(List(Int), List(Int)) {
   let assert Ok(ws_re) = regexp.from_string(" +")
 
   string.split(data, on: "\n")
