@@ -16,8 +16,14 @@ type SearchStrings {
   )
 }
 
+type Row =
+  Int
+
+type Col =
+  Int
+
 type Coord {
-  Coord(row: Int, col: Int)
+  Coord(row: Row, col: Col)
 }
 
 fn get_coord(index: Int, line_length: Int) -> Coord {
@@ -94,8 +100,56 @@ pub fn part1(data: String) -> String {
   |> int.to_string
 }
 
-pub fn part2(_data: String) -> String {
-  ""
+fn parse_cells_by_coord(data: String) -> Dict(Coord, String) {
+  let line_length = case string.split_once(data, "\n") {
+    Ok(#(first_line, _)) -> string.length(first_line)
+    _ -> panic
+  }
+  let chars = string.split(data, "")
+
+  list.index_fold(over: chars, from: dict.new(), with: fn(acc, char, index) {
+    let coord = get_coord(index, line_length)
+    dict.insert(into: acc, for: coord, insert: char)
+  })
+}
+
+type Triplet =
+  #(Result(String, Nil), Result(String, Nil), Result(String, Nil))
+
+fn is_triplet_mas(triplet: Triplet) -> Bool {
+  let str = case triplet {
+    #(Ok(s1), Ok(s2), Ok(s3)) -> Ok(s1 <> s2 <> s3)
+    _ -> Error(Nil)
+  }
+
+  case str {
+    Ok(str) -> str == "MAS" || str == "SAM"
+    _ -> False
+  }
+}
+
+pub fn part2(data: String) -> String {
+  let cells_by_coord = parse_cells_by_coord(data)
+  cells_by_coord
+  |> dict.fold(from: 0, with: fn(acc, coord, _char) {
+    let diag_lr_triplet = #(
+      dict.get(cells_by_coord, Coord(row: coord.row - 1, col: coord.col - 1)),
+      dict.get(cells_by_coord, Coord(row: coord.row, col: coord.col)),
+      dict.get(cells_by_coord, Coord(row: coord.row + 1, col: coord.col + 1)),
+    )
+    let diag_rl_triplet = #(
+      dict.get(cells_by_coord, Coord(row: coord.row - 1, col: coord.col + 1)),
+      dict.get(cells_by_coord, Coord(row: coord.row, col: coord.col)),
+      dict.get(cells_by_coord, Coord(row: coord.row + 1, col: coord.col - 1)),
+    )
+    case is_triplet_mas(diag_lr_triplet) && is_triplet_mas(diag_rl_triplet) {
+      True -> {
+        acc + 1
+      }
+      False -> acc
+    }
+  })
+  |> int.to_string
 }
 
 pub fn run() {

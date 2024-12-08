@@ -6,9 +6,7 @@ pub fn main() {
   gleeunit.main()
 }
 
-pub fn part1_test() {
-  let data =
-    "MMMSXXMASM
+const data = "MMMSXXMASM
 MSAMXMSMSA
 AMXSXMAAMM
 MSAMASMSMX
@@ -18,14 +16,15 @@ SMSMSASXSS
 SAXAMASAAA
 MAMMMXMMMM
 MXMXAXMASX"
+
+pub fn part1_test() {
   let result = solution04.part1(data)
 
   should.equal(result, "18")
 }
 
 pub fn part2_test() {
-  let data = ""
   let result = solution04.part2(data)
 
-  should.equal(result, "")
+  should.equal(result, "9")
 }
