@@ -2,9 +2,7 @@ import gleam/dict
 import gleam/set
 import gleeunit
 import gleeunit/should
-import solution06.{
-  Coord, GameState, Up, get_final_game_state, parse_data, part1, part2,
-}
+import solution06.{Coord, GameState, Up, parse_data, part1, part2}
 
 pub fn main() {
   gleeunit.main()
@@ -48,7 +46,7 @@ pub fn parse_data_test() {
 }
 
 pub fn base_case_test() {
-  let #(part1, part2) =
+  let initial_game_state =
     "....#.....
 .........#
 ..........
@@ -60,35 +58,31 @@ pub fn base_case_test() {
 #.........
 ......#..."
     |> solution06.parse_data
-    |> solution06.get_final_game_state
-    |> fn(a) { #(solution06.part1(a), solution06.part2(a)) }
 
-  should.equal(part1, "41")
-  should.equal(part2, "6")
+  should.equal(part1(initial_game_state), "41")
+  should.equal(part2(initial_game_state), "6")
 }
 
 pub fn simple_loop_test() {
-  let final_game_state =
+  let initial_game_state =
     "....
 ....
 #^.#
 ..#."
     |> parse_data
-    |> get_final_game_state
 
-  should.equal(part1(final_game_state), "3")
-  should.equal(part2(final_game_state), "1")
+  should.equal(part1(initial_game_state), "3")
+  should.equal(part2(initial_game_state), "1")
 }
 
 pub fn handle_literal_edge_case_test() {
-  let final_game_state =
+  let initial_game_state =
     "...#
 ....
 #^..
 ..#."
     |> parse_data
-    |> get_final_game_state
 
-  should.equal(part1(final_game_state), "3")
-  should.equal(part2(final_game_state), "0")
+  should.equal(part1(initial_game_state), "3")
+  should.equal(part2(initial_game_state), "0")
 }

@@ -116,98 +116,38 @@ pub fn is_out_of_bounds(coord: Coord, bounds: Coord) -> Bool {
   }
 }
 
-pub fn causes_loop(game_state: GameState) -> Bool {
-  let next_coord = get_next_coord(game_state)
-  let hit_obstacle = set.contains(game_state.obstacles, next_coord)
-  let went_offscreen = is_out_of_bounds(next_coord, game_state.bounds)
-
-  !went_offscreen
-  && case hit_obstacle {
-    True -> {
-      let new_dir = rotate(game_state.guard_dir)
-      causes_loop(
-        GameState(
-          ..game_state,
-          guard_dir: new_dir,
-          visited: add_visited(
-            game_state.visited,
-            game_state.guard_coord,
-            new_dir,
-          ),
-        ),
-      )
-    }
-    False -> {
-      has_visited(game_state.visited, next_coord, game_state.guard_dir)
-      || causes_loop(
-        GameState(
-          ..game_state,
-          guard_coord: next_coord,
-          visited: add_visited(
-            game_state.visited,
-            next_coord,
-            game_state.guard_dir,
-          ),
-        ),
-      )
-    }
-  }
+pub type GameError {
+  HasLoop
 }
 
-pub fn get_final_game_state(game_state: GameState) -> GameState {
-  let next_coord = get_next_coord(game_state)
-  let hit_obstacle = set.contains(game_state.obstacles, next_coord)
-  let went_offscreen = is_out_of_bounds(next_coord, game_state.bounds)
-  case went_offscreen, hit_obstacle {
+pub fn get_final_game_state(
+  game_state: GameState,
+) -> Result(GameState, GameError) {
+  let candidate_coord = get_next_coord(game_state)
+  let hit_obstacle = set.contains(game_state.obstacles, candidate_coord)
+  let #(next_coord, next_dir) = case hit_obstacle {
+    True -> #(game_state.guard_coord, rotate(game_state.guard_dir))
+    False -> #(candidate_coord, game_state.guard_dir)
+  }
+
+  case
+    is_out_of_bounds(next_coord, game_state.bounds),
+    has_visited(game_state.visited, next_coord, next_dir)
+  {
     // Went offscreen
-    True, _ -> game_state
-    // Hit an obstacle, turn right
+    True, _ -> Ok(game_state)
+    // Found a loop
     False, True -> {
-      let new_dir = rotate(game_state.guard_dir)
-      get_final_game_state(
-        GameState(
-          ..game_state,
-          guard_dir: new_dir,
-          // While we have already visited this square, we need to 
-          visited: add_visited(
-            game_state.visited,
-            game_state.guard_coord,
-            new_dir,
-          ),
-        ),
-      )
+      Error(HasLoop)
     }
-    // Keep going straight
+    // Go to the next step
     False, False -> {
-      let is_viable_obstruction_coord = {
-        let new_dir = rotate(game_state.guard_dir)
-        causes_loop(
-          GameState(
-            ..game_state,
-            obstacles: set.insert(game_state.obstacles, next_coord),
-            guard_dir: new_dir,
-            visited: add_visited(
-              game_state.visited,
-              game_state.guard_coord,
-              new_dir,
-            ),
-          ),
-        )
-      }
       get_final_game_state(
         GameState(
           ..game_state,
           guard_coord: next_coord,
-          visited: add_visited(
-            game_state.visited,
-            next_coord,
-            game_state.guard_dir,
-          ),
-          // Check if turning here _would_ have created a loop
-          obstruction_coords: case is_viable_obstruction_coord {
-            True -> set.insert(game_state.obstruction_coords, next_coord)
-            False -> game_state.obstruction_coords
-          },
+          guard_dir: next_dir,
+          visited: add_visited(game_state.visited, next_coord, next_dir),
         ),
       )
     }
@@ -215,22 +155,39 @@ pub fn get_final_game_state(game_state: GameState) -> GameState {
 }
 
 pub fn part1(game_state: GameState) -> String {
-  game_state
-  |> fn(state) { dict.keys(state.visited) }
+  let assert Ok(final_game_state) = get_final_game_state(game_state)
+  dict.keys(final_game_state.visited)
   |> list.length()
   |> int.to_string()
 }
 
 pub fn part2(game_state: GameState) -> String {
-  game_state
-  |> fn(state) { set.size(state.obstruction_coords) }
+  let assert Ok(final_state) = get_final_game_state(game_state)
+
+  // Only bother looking at coordinates we crossed during the fist pass through
+  dict.keys(final_state.visited)
+  |> list.filter(fn(coord) {
+    // Simulate running the whole thing from the top, with the new obstacle
+    let simulation_result =
+      get_final_game_state(
+        GameState(
+          ..game_state,
+          obstacles: set.insert(game_state.obstacles, coord),
+        ),
+      )
+    case simulation_result {
+      Error(HasLoop) -> True
+      _ -> False
+    }
+  })
+  |> list.length
   |> int.to_string()
 }
 
 pub fn run() {
   let assert Ok(data) = simplifile.read("./data/06.txt")
-  let final_game_state = get_final_game_state(parse_data(data))
+  let initial_game_state = parse_data(data)
 
-  io.println(part1(final_game_state))
-  io.println(part2(final_game_state))
+  io.println(part1(initial_game_state))
+  io.println(part2(initial_game_state))
 }
