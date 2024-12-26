@@ -1,4 +1,3 @@
-import gleam/bool
 import gleam/dict.{type Dict}
 import gleam/int
 import gleam/io
@@ -29,7 +28,7 @@ pub type GameState {
     guard_dir: Dir,
     visited: VisitedCoords,
     obstacles: Set(Coord),
-    num_loop_obstacles: Int,
+    obstruction_coords: Set(Coord),
     bounds: Coord,
   )
 }
@@ -57,7 +56,7 @@ pub fn parse_data(data: String) -> GameState {
       guard_dir: Up,
       visited: dict.new(),
       obstacles: set.new(),
-      num_loop_obstacles: 0,
+      obstruction_coords: set.new(),
       bounds: Coord(0, 0),
     )
   list.index_fold(lines, game_state, fn(game_state, line, row) {
@@ -121,8 +120,6 @@ pub fn causes_loop(game_state: GameState) -> Bool {
   let next_coord = get_next_coord(game_state)
   let hit_obstacle = set.contains(game_state.obstacles, next_coord)
   let went_offscreen = is_out_of_bounds(next_coord, game_state.bounds)
-  let been_here_before =
-    has_visited(game_state.visited, next_coord, game_state.guard_dir)
 
   !went_offscreen
   && case hit_obstacle {
@@ -141,7 +138,7 @@ pub fn causes_loop(game_state: GameState) -> Bool {
       )
     }
     False -> {
-      been_here_before
+      has_visited(game_state.visited, next_coord, game_state.guard_dir)
       || causes_loop(
         GameState(
           ..game_state,
@@ -182,6 +179,21 @@ pub fn get_final_game_state(game_state: GameState) -> GameState {
     }
     // Keep going straight
     False, False -> {
+      let is_viable_obstruction_coord = {
+        let new_dir = rotate(game_state.guard_dir)
+        causes_loop(
+          GameState(
+            ..game_state,
+            obstacles: set.insert(game_state.obstacles, next_coord),
+            guard_dir: new_dir,
+            visited: add_visited(
+              game_state.visited,
+              game_state.guard_coord,
+              new_dir,
+            ),
+          ),
+        )
+      }
       get_final_game_state(
         GameState(
           ..game_state,
@@ -192,54 +204,15 @@ pub fn get_final_game_state(game_state: GameState) -> GameState {
             game_state.guard_dir,
           ),
           // Check if turning here _would_ have created a loop
-          num_loop_obstacles: case
-            causes_loop(
-              GameState(..game_state, guard_dir: rotate(game_state.guard_dir)),
-            )
-          {
-            True -> game_state.num_loop_obstacles + 1
-            False -> game_state.num_loop_obstacles
+          obstruction_coords: case is_viable_obstruction_coord {
+            True -> set.insert(game_state.obstruction_coords, next_coord)
+            False -> game_state.obstruction_coords
           },
         ),
       )
     }
   }
 }
-
-//fn get_offset(dir: Dir) -> #(Int, Int) {
-//  case dir {
-//    Up -> #(0, 1)
-//    Right -> #(1, 0)
-//    Down -> #(0, -1)
-//    Left -> #(-1, 0)
-//  }
-//}
-
-//fn get_coords_to_the_right(dir: Dir, bounds: Coord, coord: Coord) -> List(Coord) {
-//  let offset = get_offset(dir)
-//  let next_coord = Coord(coord.row + offset.0, coord.col + offset.1)
-//
-//  case is_out_of_bounds(next_coord, bounds) {
-//    True -> []
-//    False -> [next_coord, ..get_coords_to_the_right(dir, bounds, next_coord)]
-//  }
-//}
-//
-//fn would_cause_loop(dir: Dir, bounds: Coord, coord: Coord) -> Bool {
-//  get_coords_to_the_right(game_state, dir, coord)
-//  |> list.window_by_2()
-//  |> list.any(fn(coords) {
-//    case
-//      set.contains(game_state.visited, coords.0),
-//      set.contains(game_state.obstacles, coords.1)
-//    {
-//      True, True -> True
-//      // Think harder
-//      False, True -> would_cause_loop()
-//      _, False -> False
-//    }
-//  })
-//}
 
 pub fn part1(game_state: GameState) -> String {
   game_state
@@ -250,7 +223,7 @@ pub fn part1(game_state: GameState) -> String {
 
 pub fn part2(game_state: GameState) -> String {
   game_state
-  |> fn(state) { state.num_loop_obstacles }
+  |> fn(state) { set.size(state.obstruction_coords) }
   |> int.to_string()
 }
 

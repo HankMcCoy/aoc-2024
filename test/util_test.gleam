@@ -1,8 +1,4 @@
-import gleam/dict
-import gleam/io
 import gleam/option.{None, Some}
-import gleam/set
-import gleeunit
 import gleeunit/should
 import util.{get_at, index_of}
 

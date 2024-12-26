@@ -1,10 +1,8 @@
-import gleam/dict.{type Dict}
 import gleam/int
 import gleam/io
 import gleam/list
 import gleam/option.{Some}
 import gleam/order
-import gleam/set.{type Set}
 import gleam/string
 import simplifile
 import util.{get_at, index_of, parse_int}

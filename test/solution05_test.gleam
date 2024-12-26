@@ -1,9 +1,6 @@
-import gleam/dict
-import gleam/io
-import gleam/set
 import gleeunit
 import gleeunit/should
-import solution05.{Rule, obeys_rule, parse_data, parse_update}
+import solution05.{Rule, parse_update}
 
 pub fn main() {
   gleeunit.main()
