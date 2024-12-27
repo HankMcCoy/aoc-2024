@@ -38,6 +38,7 @@ pub fn parse_data(data: String) -> ParsedData {
 pub type OperatorType {
   Mult
   Add
+  Concat
 }
 
 type EquationUnit {
@@ -56,32 +57,44 @@ fn apply_operators(
       case op {
         Mult -> apply_operators(rest, running_total * val)
         Add -> apply_operators(rest, running_total + val)
+        Concat ->
+          apply_operators(
+            rest,
+            parse_int(int.to_string(running_total) <> int.to_string(val)),
+          )
       }
     _ -> panic
   }
 }
 
 pub fn get_operator_combos(
+  operator_types: List(OperatorType),
   len: Int,
   existing_operators: List(OperatorType),
 ) -> List(List(OperatorType)) {
   case len {
     0 -> [existing_operators]
     _ -> {
-      let result =
-        list.flatten([
-          get_operator_combos(len - 1, list.append(existing_operators, [Mult])),
-          get_operator_combos(len - 1, list.append(existing_operators, [Add])),
-        ])
-      result
+      list.flatten(
+        list.map(operator_types, fn(cur_op_type) {
+          get_operator_combos(
+            operator_types,
+            len - 1,
+            list.append(existing_operators, [cur_op_type]),
+          )
+        }),
+      )
     }
   }
 }
 
-fn could_be_true(equation: EquationData) -> Bool {
+fn could_be_true(
+  equation: EquationData,
+  operator_types: List(OperatorType),
+) -> Bool {
   let num_operators = list.length(equation.operands) - 1
   let operator_combos: List(List(OperatorType)) =
-    get_operator_combos(num_operators, [])
+    get_operator_combos(operator_types, num_operators, [])
 
   list.any(operator_combos, fn(operator_combo) {
     let eq_units =
@@ -95,14 +108,18 @@ fn could_be_true(equation: EquationData) -> Bool {
 
 pub fn part1(data: String) -> String {
   parse_data(data)
-  |> list.filter(could_be_true)
+  |> list.filter(could_be_true(_, [Mult, Add]))
   |> list.map(fn(x) { x.sum })
   |> int.sum
   |> int.to_string
 }
 
 pub fn part2(data: String) -> String {
-  ""
+  parse_data(data)
+  |> list.filter(could_be_true(_, [Mult, Add, Concat]))
+  |> list.map(fn(x) { x.sum })
+  |> int.sum
+  |> int.to_string
 }
 
 pub fn run() {

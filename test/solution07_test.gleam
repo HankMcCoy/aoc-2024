@@ -11,7 +11,7 @@ pub fn main() {
 }
 
 pub fn get_operator_combos_test() {
-  should.equal(get_operator_combos(2, []), [
+  should.equal(get_operator_combos([Mult, Add], 2, []), [
     [Mult, Mult],
     [Mult, Add],
     [Add, Mult],
@@ -60,7 +60,16 @@ pub fn part1_test() {
 }
 
 pub fn part2_test() {
-  let data = ""
+  let data =
+    "190: 10 19
+ 3267: 81 40 27
+ 83: 17 5
+ 156: 15 6
+ 7290: 6 8 6 15
+ 161011: 16 10 13
+ 192: 17 8 14
+ 21037: 9 7 18 13
+ 292: 11 6 16 20"
 
-  should.equal(part2(data), "")
+  should.equal(part2(data), "11387")
 }
