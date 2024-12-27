@@ -1,9 +1,11 @@
-import cache
 import gleam/dict
 import gleam/set
 import gleeunit
 import gleeunit/should
-import solution08.{ParsedData, get_candidate_antinodes, parse_data, part1, part2}
+import solution08.{
+  ParsedData, get_candidate_antinodes_v1, get_candidate_antinodes_v2, parse_data,
+  part1, part2,
+}
 import util.{Coord}
 
 pub fn main() {
@@ -37,11 +39,24 @@ pub fn parse_data_test() {
   )
 }
 
-pub fn get_candidate_antinodes_test() {
-  should.equal(get_candidate_antinodes(#(Coord(10, 12), Coord(32, 10))), [
-    Coord(-12, 14),
-    Coord(54, 8),
-  ])
+pub fn get_candidate_antinodes_v1_test() {
+  should.equal(
+    get_candidate_antinodes_v1(#(Coord(20, 12), Coord(32, 10)), 100),
+    set.from_list([Coord(8, 14), Coord(44, 8)]),
+  )
+}
+
+pub fn get_candidate_antinodes_v2_test() {
+  should.equal(
+    get_candidate_antinodes_v2(#(Coord(1, 1), Coord(2, 2)), 5),
+    set.from_list([
+      Coord(0, 0),
+      Coord(1, 1),
+      Coord(2, 2),
+      Coord(3, 3),
+      Coord(4, 4),
+    ]),
+  )
 }
 
 pub fn part1_test() {
@@ -63,7 +78,19 @@ pub fn part1_test() {
 }
 
 pub fn part2_test() {
-  let data = ""
+  let data =
+    "............
+........0...
+.....0......
+.......0....
+....0.......
+......A.....
+............
+............
+........A...
+.........A..
+............
+............"
 
-  should.equal(part2(data), "")
+  should.equal(part2(data), "34")
 }

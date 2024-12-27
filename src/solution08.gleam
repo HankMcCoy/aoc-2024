@@ -1,4 +1,3 @@
-import cache
 import gleam/dict.{type Dict}
 import gleam/int
 import gleam/io
@@ -39,18 +38,6 @@ pub fn parse_data(data: String) -> ParsedData {
   ParsedData(antennas:, size: list.length(lines))
 }
 
-pub fn get_candidate_antinodes(coord_pair: #(Coord, Coord)) {
-  let #(c1, c2) = coord_pair
-  [
-    util.add_coords(c1, util.subtract_coords(c1, c2)),
-    util.add_coords(c2, util.subtract_coords(c2, c1)),
-  ]
-}
-
-pub type AntennaPair {
-  AntennaPair(c1: Coord, c2: Coord, antenna: String)
-}
-
 fn is_in_bounds(c: Coord, size: Int) {
   case c {
     Coord(row, _) if row < 0 || row >= size -> False
@@ -61,30 +48,68 @@ fn is_in_bounds(c: Coord, size: Int) {
 
 pub fn get_antinodes_by_antenna(
   parsed_data: ParsedData,
+  get_candidate_antinodes: fn(#(Coord, Coord), Int) -> Set(Coord),
 ) -> Dict(Antenna, Set(Coord)) {
   parsed_data.antennas
-  // Get all pairs of matching antennas
   |> dict.map_values(fn(_antenna, coords) { list.combination_pairs(coords) })
   |> dict.map_values(fn(_antenna, coord_pairs) {
-    // Get the antinodes for each
-    list.flat_map(coord_pairs, get_candidate_antinodes)
-    // Filter out any that are out of bounds
-    |> list.filter(is_in_bounds(_, parsed_data.size))
-    |> set.from_list()
+    list.map(coord_pairs, get_candidate_antinodes(_, parsed_data.size))
+    |> util.union_all()
   })
+}
+
+pub fn get_candidate_antinodes_v1(coord_pair: #(Coord, Coord), size: Int) {
+  let #(c1, c2) = coord_pair
+  [
+    util.add_coords(c1, util.subtract_coords(c1, c2)),
+    util.add_coords(c2, util.subtract_coords(c2, c1)),
+  ]
+  |> list.filter(is_in_bounds(_, size))
+  |> set.from_list()
 }
 
 pub fn part1(data: String) -> String {
   let parsed_data = parse_data(data)
-  get_antinodes_by_antenna(parsed_data)
+  get_antinodes_by_antenna(parsed_data, get_candidate_antinodes_v1)
   |> dict.values()
   |> util.union_all()
   |> set.size()
   |> int.to_string()
 }
 
-pub fn part2(_data: String) -> String {
-  ""
+fn apply_delta_until_out_of_bounds(
+  start_coord: Coord,
+  delta: Coord,
+  size: Int,
+) -> List(Coord) {
+  let next_coord = util.add_coords(start_coord, delta)
+  case is_in_bounds(next_coord, size) {
+    True -> [
+      next_coord,
+      ..apply_delta_until_out_of_bounds(next_coord, delta, size)
+    ]
+    False -> []
+  }
+}
+
+pub fn get_candidate_antinodes_v2(coord_pair: #(Coord, Coord), size: Int) {
+  let #(c1, c2) = coord_pair
+  [
+    apply_delta_until_out_of_bounds(c2, util.subtract_coords(c1, c2), size),
+    apply_delta_until_out_of_bounds(c1, util.subtract_coords(c2, c1), size),
+  ]
+  |> list.flatten()
+  |> list.filter(is_in_bounds(_, size))
+  |> set.from_list()
+}
+
+pub fn part2(data: String) -> String {
+  let parsed_data = parse_data(data)
+  get_antinodes_by_antenna(parsed_data, get_candidate_antinodes_v2)
+  |> dict.values()
+  |> util.union_all()
+  |> set.size()
+  |> int.to_string()
 }
 
 pub fn run() {

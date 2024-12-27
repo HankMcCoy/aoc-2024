@@ -1,6 +1,4 @@
 import cache
-import gleam/dict
-import gleam/set
 import gleeunit
 import gleeunit/should
 import solution07.{
