@@ -1,3 +1,4 @@
+import cache
 import gleam/dict
 import gleam/set
 import gleeunit
@@ -11,7 +12,8 @@ pub fn main() {
 }
 
 pub fn get_operator_combos_test() {
-  should.equal(get_operator_combos([Mult, Add], 2, []), [
+  use cache <- cache.create()
+  should.equal(get_operator_combos([Mult, Add], 2, cache), [
     [Mult, Mult],
     [Mult, Add],
     [Add, Mult],
