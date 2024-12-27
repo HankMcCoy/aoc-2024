@@ -7,6 +7,7 @@ import solution05
 import solution06
 import solution07
 import solution08
+import solution09
 
 pub fn main() {
   case argv.load().arguments {
@@ -18,6 +19,7 @@ pub fn main() {
     ["06"] -> solution06.run()
     ["07"] -> solution07.run()
     ["08"] -> solution08.run()
+    ["09"] -> solution09.run()
     _ -> panic as "No matching solution found"
   }
 }
