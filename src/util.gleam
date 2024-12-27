@@ -3,7 +3,20 @@ import gleam/io
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/regexp
+import gleam/set.{type Set}
 import gleam/string
+
+pub type Coord {
+  Coord(row: Int, col: Int)
+}
+
+pub fn subtract_coords(c1: Coord, c2: Coord) {
+  Coord(c1.row - c2.row, c1.col - c2.col)
+}
+
+pub fn add_coords(c1: Coord, c2: Coord) {
+  Coord(c1.row + c2.row, c1.col + c2.col)
+}
 
 pub fn parse_number_lists(data: String) -> List(List(Int)) {
   let assert Ok(ws_re) = regexp.from_string(" +")
@@ -19,6 +32,20 @@ pub fn parse_number_lists(data: String) -> List(List(Int)) {
       }
     })
   })
+}
+
+pub fn union_all(sets: List(Set(a))) -> Set(a) {
+  case sets {
+    [s1, ..rest] -> set.union(s1, union_all(rest))
+    [] -> set.new()
+  }
+}
+
+pub fn get_lines(data: String) -> List(String) {
+  data
+  |> string.split("\n")
+  |> list.map(string.trim)
+  |> list.filter(fn(x) { !string.is_empty(x) })
 }
 
 pub fn parse_int(str: String) -> Int {
