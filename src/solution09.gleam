@@ -1,3 +1,5 @@
+import ary.{type Ary}
+import gleam/function
 import gleam/int
 import gleam/io
 import gleam/list
@@ -6,65 +8,96 @@ import gleam/string
 import simplifile
 import util
 
-pub type DiskMapUnit {
-  Space(size: Int)
-  FileBlock(size: Int, id: Int)
-}
+pub type FileId =
+  Int
 
 pub type DiskMap =
-  List(DiskMapUnit)
+  Ary(Option(FileId))
 
 pub fn parse_data(data: String) -> DiskMap {
-  data
-  |> string.split("")
+  let chars = string.split(data, "")
+  let chars_len = list.length(chars)
+
+  chars
   |> list.map(util.parse_int)
-  |> list.index_map(fn(val, idx) {
-    case idx % 2 {
-      0 -> FileBlock(id: idx / 2, size: val)
-      1 -> Space(val)
-      _ -> panic
+  |> list.index_fold(ary.new(), fn(ar, val, idx) {
+    io.debug(
+      "Parsing " <> int.to_string(idx) <> " of " <> int.to_string(chars_len),
+    )
+    let content = case idx % 2 {
+      0 -> Some(idx / 2)
+      _ -> None
+    }
+
+    case val {
+      0 -> ar
+      _ ->
+        list.range(0, val - 1)
+        |> list.map(fn(_) { content })
+        |> ary.append(ar, _)
     }
   })
 }
 
-pub fn get_file_at_block(disk_map: DiskMap, block_idx: Int) -> Option(Int) {
-  case disk_map {
-    [head, ..rest] -> {
-      case head {
-        FileBlock(size, id) if block_idx < size -> Some(id)
-        Space(size) if block_idx < size -> None
-        FileBlock(size, _) | Space(size) ->
-          get_file_at_block(rest, block_idx - size)
-      }
-    }
-    [] -> panic
-  }
-}
-
-fn get_disk_map_size(disk_map: DiskMap) -> Int {
-  disk_map
-  |> list.map(fn(a) { a.size })
-  |> int.sum()
-}
+// fn debug_print(ar: DiskMap, idx: Int) {
+//   let ar_str =
+//     ar
+//     |> ary.to_list()
+//     |> list.map(fn(x) {
+//       case x {
+//         Some(val) -> int.to_string(val)
+//         None -> "."
+//       }
+//     })
+//     |> string.join("")
+//   io.debug(ar_str)
+// 
+//   let ptr_str =
+//     list.range(0, idx)
+//     |> list.index_map(fn(_, i) {
+//       case i {
+//         i if i == idx -> "^"
+//         _ -> " "
+//       }
+//     })
+//     |> string.join("")
+// 
+//   io.debug(ptr_str)
+// }
 
 pub fn part1(data: String) -> String {
-  let disk_map = parse_data(data)
-  let disk_map_size = get_disk_map_size(disk_map)
-
-  list.range(0, disk_map_size - 1)
-  |> list.map_fold(0, fn(nth_file_block_from_the_end, block_idx) {
-    case get_file_at_block(disk_map, block_idx) {
-      Some(file_id) -> #(nth_file_block_from_the_end, file_id)
+  io.debug("Parsing…")
+  let ar = parse_data(data)
+  io.debug("Folding…")
+  ary.index_fold(ar, ar, fn(ar, val, idx) {
+    io.debug("Idx: " <> int.to_string(idx))
+    case val {
+      Some(_) -> ar
       None -> {
-        #(nth_file_block_from_the_end, todo)
-        todo
+        let last_non_empty_idx =
+          ary.last_index_matching(ar, fn(val) {
+            case val {
+              Some(_) -> True
+              _ -> False
+            }
+          })
+        case last_non_empty_idx {
+          Some(last_non_empty_idx) if idx < last_non_empty_idx ->
+            ary.swap(ar, idx, last_non_empty_idx)
+          _ -> ar
+        }
       }
     }
   })
-  |> fn(x) { x.1 }
-  |> list.map(int.to_string)
-  |> string.join("")
-  ""
+  |> ary.to_list()
+  |> function.tap(fn(_) { io.debug("Calculating checksum…") })
+  |> list.index_fold(0, fn(checksum, val, idx) {
+    case val {
+      Some(val) -> checksum + val * idx
+      None -> checksum
+    }
+  })
+  |> int.to_string()
 }
 
 pub fn part2(_data: String) -> String {
