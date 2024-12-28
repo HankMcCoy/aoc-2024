@@ -1,4 +1,3 @@
-import gleam/option.{None, Some}
 import gleeunit
 import gleeunit/should
 import solution09.{FileBlock, Space, parse_data, part1, part2}
@@ -40,7 +39,7 @@ pub fn part1_test() {
 }
 
 pub fn part2_test() {
-  let data = ""
+  let data = "2333133121414131402"
 
-  should.equal(part2(data), "")
+  should.equal(part2(data), "2858")
 }
