@@ -90,8 +90,46 @@ pub fn part1(data: String) -> String {
   |> int.to_string
 }
 
-pub fn part2(_data: String) -> String {
-  ""
+fn get_rating_iter(
+  grid: List(List(Int)),
+  grid_size: Int,
+  cur_height: Int,
+  coord: Coord,
+) -> Int {
+  let next_height = cur_height + 1
+  case cur_height {
+    9 -> 1
+    _ -> {
+      get_neighbors(coord, grid_size)
+      |> set.filter(fn(c) {
+        case get_at_coord(grid, c) {
+          height if height == next_height -> True
+          _ -> False
+        }
+      })
+      |> set.fold(0, fn(acc, n) {
+        acc + get_rating_iter(grid, grid_size, next_height, n)
+      })
+    }
+  }
+}
+
+fn get_rating(grid: List(List(Int)), coord: Coord) -> Int {
+  get_rating_iter(grid, list.length(grid), 0, coord)
+}
+
+pub fn part2(data: String) -> String {
+  let grid = parse_data(data)
+
+  list.index_fold(grid, 0, fn(acc, row_data, row_idx) {
+    list.index_fold(row_data, acc, fn(acc, height, col_idx) {
+      case height {
+        0 -> acc + get_rating(grid, Coord(row_idx, col_idx))
+        _ -> acc
+      }
+    })
+  })
+  |> int.to_string
 }
 
 pub fn run() {
