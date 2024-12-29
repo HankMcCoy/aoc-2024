@@ -1,5 +1,3 @@
-import gleam/dict
-import gleam/set
 import gleeunit
 import gleeunit/should
 import solution10.{parse_data, part1, part2}
